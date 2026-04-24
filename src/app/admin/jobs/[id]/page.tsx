@@ -127,6 +127,16 @@ export default async function AdminJobApplicationsPage({
                       LinkedIn ↗
                     </a>
                   )}
+                  {app.resumeStoragePath && (
+                    <a
+                      href={`/api/admin/resume/${app.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-border px-3 py-1 font-medium text-secondary hover:text-fg"
+                    >
+                      Resume PDF ↓
+                    </a>
+                  )}
                   {answers.currentCtc && (
                     <span className="rounded-full border border-border px-3 py-1 text-secondary">
                       Current: {answers.currentCtc}

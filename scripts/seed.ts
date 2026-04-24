@@ -1,6 +1,7 @@
 import { Pool, neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { jobs } from "../src/db/schema";
+import { ensureResumeBucket, isStorageConfigured } from "../src/lib/storage";
 
 async function main() {
   const url = process.env.DATABASE_URL;
@@ -13,6 +14,18 @@ async function main() {
   const pool = new Pool({ connectionString: url });
   await pool.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
   await pool.end();
+  console.log(`Ensured Postgres schema "${schemaName}" exists.`);
+
+  if (isStorageConfigured()) {
+    await ensureResumeBucket();
+    console.log(
+      `Ensured Supabase bucket "${process.env.SUPABASE_BUCKET ?? "resumes"}" exists.`,
+    );
+  } else {
+    console.log(
+      "Supabase env vars not set — skipping bucket creation. Resume uploads will fall back to text-only.",
+    );
+  }
 
   const sql = neon(url);
   const db = drizzle(sql);
@@ -48,7 +61,7 @@ async function main() {
     .onConflictDoNothing()
     .returning({ id: jobs.id, title: jobs.title });
 
-  console.log(`Seeded ${seeded.length} jobs into schema "${schemaName}"`);
+  console.log(`Seeded ${seeded.length} jobs into schema "${schemaName}".`);
 }
 
 main().catch((err) => {

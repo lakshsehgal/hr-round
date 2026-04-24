@@ -1,0 +1,51 @@
+name: Apply DB schema and seed
+
+# Runs drizzle-kit push (applies schema to Neon) and the seed script
+# (creates the Supabase bucket + seeds the demo job). Safe to re-run:
+# schema push is idempotent, seed uses onConflictDoNothing, bucket create
+# is guarded.
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+    paths:
+      - "src/db/schema.ts"
+      - "scripts/seed.ts"
+      - "drizzle/**"
+      - "drizzle.config.ts"
+      - ".github/workflows/migrate-and-seed.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: migrate-and-seed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DB_SCHEMA: ${{ secrets.DB_SCHEMA }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_BUCKET: ${{ secrets.SUPABASE_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Check required secrets
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is not set"
+            exit 1
+          fi
+      - name: Install dependencies
+        run: npm ci
+      - name: Apply Drizzle schema to Neon
+        run: npx drizzle-kit push --force
+      - name: Seed database and Supabase bucket
+        run: npm run db:seed

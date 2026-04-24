@@ -9,11 +9,13 @@
     "lint": "next lint",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:seed": "tsx --env-file=.env.local scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "db:seed:local": "tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
     "@neondatabase/serverless": "^1.0.2",
+    "@supabase/supabase-js": "^2.104.1",
     "drizzle-orm": "^0.44.6",
     "next": "^15.5.4",
     "pdf-parse": "^1.1.1",

@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { applications, jobs } from "@/db/schema";
 import { extractPdfText } from "@/lib/pdf";
 import { screenApplication } from "@/lib/screening";
+import { isStorageConfigured, uploadResume } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -113,6 +114,7 @@ export async function POST(request: Request) {
 
   let resumeFileName: string | null = null;
   let resumeText: string | null = null;
+  let resumeBuffer: Buffer | null = null;
 
   const resume = formData.get("resume");
   if (resume instanceof File && resume.size > 0) {
@@ -122,9 +124,9 @@ export async function POST(request: Request) {
     if (resume.size > MAX_RESUME_BYTES) {
       return NextResponse.json({ error: "Resume must be under 5 MB" }, { status: 400 });
     }
-    const buffer = Buffer.from(await resume.arrayBuffer());
+    resumeBuffer = Buffer.from(await resume.arrayBuffer());
     try {
-      resumeText = await extractPdfText(buffer);
+      resumeText = await extractPdfText(resumeBuffer);
       resumeFileName = resume.name;
     } catch {
       return NextResponse.json(
@@ -163,7 +165,23 @@ export async function POST(request: Request) {
     })
     .returning({ id: applications.id });
 
-  void screenApplication(inserted.id);
+  if (resumeBuffer && resumeFileName && isStorageConfigured()) {
+    try {
+      const path = await uploadResume({
+        applicationId: inserted.id,
+        fileName: resumeFileName,
+        buffer: resumeBuffer,
+      });
+      await db
+        .update(applications)
+        .set({ resumeStoragePath: path })
+        .where(eq(applications.id, inserted.id));
+    } catch (err) {
+      console.error("Resume upload failed", err);
+    }
+  }
+
+  after(() => screenApplication(inserted.id));
 
   return NextResponse.json({ id: inserted.id }, { status: 201 });
 }
