@@ -13,6 +13,7 @@ export default async function AdminDashboardPage() {
   const rows = await db
     .select({
       id: jobs.id,
+      slug: jobs.slug,
       title: jobs.title,
       department: jobs.department,
       isOpen: jobs.isOpen,
@@ -33,11 +34,15 @@ export default async function AdminDashboardPage() {
   const countsByJob = new Map(counts.map((c) => [c.jobId, c.count]));
 
   return (
-    <div className="space-y-8">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900">Admin · Jobs</h1>
+    <div className="mx-auto max-w-3xl px-8 pb-20 pt-8">
+      <header className="mb-10 flex items-center justify-between">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight">
+          Admin · Jobs<span className="text-accent">.</span>
+        </h1>
         <form action="/api/admin/logout" method="post">
-          <button className="text-sm text-slate-500 hover:text-slate-900">Sign out</button>
+          <button className="text-xs uppercase tracking-widest text-muted transition-colors hover:text-fg">
+            Sign out
+          </button>
         </form>
       </header>
 
@@ -46,19 +51,23 @@ export default async function AdminDashboardPage() {
           <li key={job.id}>
             <Link
               href={`/admin/jobs/${job.id}`}
-              className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-5 transition hover:border-brand-500"
+              className="flex items-center justify-between rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-accent"
             >
               <div>
-                <h2 className="font-semibold text-slate-900">{job.title}</h2>
-                <p className="text-xs text-slate-500">
+                <h2 className="font-display text-lg font-bold tracking-tight">
+                  {job.title}
+                </h2>
+                <p className="mt-1 text-xs uppercase tracking-widest text-muted">
                   {job.department ?? "—"} · {job.isOpen ? "Open" : "Closed"}
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold text-slate-900">
+                <div className="font-display text-xl font-extrabold text-accent">
                   {countsByJob.get(job.id) ?? 0}
                 </div>
-                <div className="text-xs text-slate-500">applications</div>
+                <div className="text-[11px] uppercase tracking-widest text-muted">
+                  applications
+                </div>
               </div>
             </Link>
           </li>

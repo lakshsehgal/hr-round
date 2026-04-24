@@ -35,12 +35,14 @@ const screeningTool = {
       strengths: {
         type: "array",
         items: { type: "string" },
-        description: "Specific, evidence-based strengths from the resume.",
+        description:
+          "Specific, evidence-based strengths from the candidate's answers and portfolio.",
       },
       gaps: {
         type: "array",
         items: { type: "string" },
-        description: "Specific gaps against the must-haves and nice-to-haves.",
+        description:
+          "Specific gaps against the must-haves and nice-to-haves.",
       },
       rationale: {
         type: "string",
@@ -51,35 +53,56 @@ const screeningTool = {
   },
 };
 
-function buildPrompt(args: {
-  job: { title: string; description: string; mustHaves: string[]; niceToHaves: string[] };
-  candidate: { yearsExperience: number | null; coverNote: string | null; resumeText: string };
-}) {
-  const { job, candidate } = args;
-  const jobSection = [
-    `Role: ${job.title}`,
-    "",
-    "Role description:",
-    job.description,
-    "",
-    "Must-haves:",
-    ...job.mustHaves.map((m) => `- ${m}`),
-    "",
-    "Nice-to-haves:",
-    ...job.niceToHaves.map((n) => `- ${n}`),
-  ].join("\n");
+type VideoEditorAnswers = {
+  city?: string;
+  roleType?: string;
+  experience?: string;
+  tools?: string[];
+  portfolio?: string;
+  d2cExperience?: string;
+  standout?: string;
+  wfoDelhi?: string;
+  currentCtc?: string;
+  expectedCtc?: string;
+  noticePeriod?: string;
+  additionalInfo?: string | null;
+};
 
-  const candidateSection = [
-    `Years of relevant experience: ${candidate.yearsExperience ?? "not provided"}`,
+function renderVideoEditorCandidate(args: {
+  fullName: string;
+  email: string;
+  phone: string | null;
+  linkedinUrl: string | null;
+  answers: VideoEditorAnswers;
+  resumeText: string | null;
+}): string {
+  const { answers } = args;
+  const lines: string[] = [
+    `Applying for: ${answers.roleType ?? "not specified"}`,
+    `City: ${answers.city ?? "not specified"}`,
+    `Years of experience: ${answers.experience ?? "not specified"}`,
+    `Tools: ${(answers.tools ?? []).join(", ") || "none listed"}`,
+    `Portfolio / reel: ${answers.portfolio ?? "not provided"}`,
+    `LinkedIn: ${args.linkedinUrl || "not provided"}`,
     "",
-    "Cover note:",
-    candidate.coverNote?.trim() || "(none)",
+    "D2C experience (self-described):",
+    answers.d2cExperience ?? "(empty)",
     "",
-    "Resume (extracted text):",
-    candidate.resumeText,
-  ].join("\n");
-
-  return { jobSection, candidateSection };
+    "What makes their work stand out (self-described):",
+    answers.standout ?? "(empty)",
+    "",
+    `WFO Delhi comfort: ${answers.wfoDelhi ?? "not specified"}`,
+    `Current CTC: ${answers.currentCtc ?? "not specified"}`,
+    `Expected CTC: ${answers.expectedCtc ?? "not specified"}`,
+    `Notice period: ${answers.noticePeriod ?? "not specified"}`,
+  ];
+  if (answers.additionalInfo) {
+    lines.push("", "Additional info:", answers.additionalInfo);
+  }
+  if (args.resumeText) {
+    lines.push("", "Resume (extracted text):", args.resumeText);
+  }
+  return lines.join("\n");
 }
 
 export async function screenApplication(applicationId: string): Promise<void> {
@@ -105,18 +128,30 @@ export async function screenApplication(applicationId: string): Promise<void> {
     const [job] = await db.select().from(jobs).where(eq(jobs.id, app.jobId)).limit(1);
     if (!job) throw new Error("Job not found");
 
-    const { jobSection, candidateSection } = buildPrompt({
-      job: {
-        title: job.title,
-        description: job.description,
-        mustHaves: job.mustHaves,
-        niceToHaves: job.niceToHaves,
-      },
-      candidate: {
-        yearsExperience: app.yearsExperience,
-        coverNote: app.coverNote,
-        resumeText: app.resumeText,
-      },
+    const jobSpec = [
+      `Role: ${job.title}`,
+      job.tagline ? `Tagline: ${job.tagline}` : null,
+      `Location: ${job.location ?? "not specified"}`,
+      "",
+      "Role description:",
+      job.description,
+      "",
+      "Must-haves:",
+      ...job.mustHaves.map((m) => `- ${m}`),
+      "",
+      "Nice-to-haves:",
+      ...job.niceToHaves.map((n) => `- ${n}`),
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const candidateSection = renderVideoEditorCandidate({
+      fullName: app.fullName,
+      email: app.email,
+      phone: app.phone,
+      linkedinUrl: app.linkedinUrl,
+      answers: (app.answers ?? {}) as VideoEditorAnswers,
+      resumeText: app.resumeText,
     });
 
     const client = new Anthropic({ apiKey });
@@ -129,15 +164,18 @@ export async function screenApplication(applicationId: string): Promise<void> {
         {
           type: "text",
           text: [
-            "You are an unbiased hiring screener. Judge fit strictly from the resume, cover note, and stated experience against the role's must-haves and nice-to-haves.",
-            "Ignore name, gender, ethnicity, nationality, age, or school prestige. Do not penalize for career gaps.",
-            "Base every strength and gap on specific evidence from the resume or cover note — do not fabricate.",
+            "You are an unbiased hiring screener for a creative agency that hires video editors and graphic designers for D2C performance creative work.",
+            "Judge fit strictly against the role's must-haves and nice-to-haves using the candidate's self-reported answers and (when present) their resume text.",
+            "Signals you should weigh: tool overlap with the role, years of experience band, portfolio link presence + specificity, quality and specificity of their D2C experience description, concreteness of what makes their work stand out, CTC alignment, notice period, and WFO Delhi compatibility.",
+            "Since you cannot view the portfolio contents, do NOT assume portfolio quality — only note whether a link was provided and whether their own description of their work is specific and outcome-oriented vs. vague.",
+            "Ignore name, gender, ethnicity, nationality, age, school prestige. Do not penalize career gaps.",
+            "Base every strength and gap on specific evidence from the candidate's answers. Do not fabricate.",
             "Return your decision by calling the submit_screening tool. Do not write any prose outside the tool call.",
           ].join(" "),
         },
         {
           type: "text",
-          text: `Job specification:\n\n${jobSection}`,
+          text: `Job specification:\n\n${jobSpec}`,
           cache_control: { type: "ephemeral" },
         },
       ],

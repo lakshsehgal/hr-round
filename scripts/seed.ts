@@ -20,55 +20,28 @@ async function main() {
     .insert(jobs)
     .values([
       {
-        title: "Senior Full-Stack Engineer",
-        department: "Engineering",
-        location: "Remote (EU/US)",
+        slug: "video-editor-graphic-designer",
+        title: "Video Editor & Graphic Designer",
+        tagline:
+          "Craft fast, engaging D2C content that stops thumbs and drives conversions.",
+        department: "Creative",
+        location: "Delhi (WFO / Hybrid)",
         employmentType: "Full-time",
+        formType: "video_editor_designer",
         description:
-          "Build product features end-to-end across our Next.js + Postgres stack. Partner with design and product to ship iteratively and own quality.",
+          "Join Neuroid Media — a performance & creative growth agency for ambitious D2C brands. We're looking for someone who can craft fast, engaging content that stops thumbs and drives conversions. If you eat, sleep, and breathe D2C creative — this is for you.",
         mustHaves: [
-          "5+ years shipping production web apps",
-          "Strong TypeScript and React",
-          "Comfort writing SQL against Postgres",
+          "Hands-on experience editing short-form D2C ad creatives",
+          "Fluency in at least one of: Premiere Pro, After Effects, DaVinci Resolve, CapCut",
+          "Strong eye for pacing, hooks, and scroll-stopping edits",
+          "Fast turnaround without compromising quality",
+          "Portfolio demonstrating D2C / performance creative work",
         ],
         niceToHaves: [
-          "Experience with Next.js App Router",
-          "Prior startup / 0-to-1 experience",
-          "LLM / AI product experience",
-        ],
-      },
-      {
-        title: "AI Product Engineer",
-        department: "AI",
-        location: "Remote",
-        employmentType: "Full-time",
-        description:
-          "Design and ship LLM-powered features. You will own prompt design, evaluation pipelines, and production integration with Anthropic's Claude API.",
-        mustHaves: [
-          "Hands-on experience integrating LLM APIs in production",
-          "Strong Python or TypeScript",
-          "Experience designing evaluations for AI features",
-        ],
-        niceToHaves: [
-          "Prompt caching / tool use with Claude",
-          "Familiarity with retrieval / embeddings",
-        ],
-      },
-      {
-        title: "Recruiting Operations Lead",
-        department: "People",
-        location: "Hybrid - London",
-        employmentType: "Full-time",
-        description:
-          "Own the hiring funnel end-to-end. Partner with hiring managers, build structured interview loops, and improve candidate experience.",
-        mustHaves: [
-          "3+ years recruiting in tech orgs",
-          "Experience running structured interviews",
-          "Strong written communication",
-        ],
-        niceToHaves: [
-          "Experience with ATS tools (Greenhouse/Ashby)",
-          "Worked at companies scaling past 100 employees",
+          "Graphic design skills across Figma / Photoshop / Illustrator",
+          "Experience with UGC-style ad edits",
+          "Motion graphics and typography chops",
+          "Based in Delhi or open to Delhi WFO",
         ],
       },
     ])
