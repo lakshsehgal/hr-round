@@ -11,6 +11,7 @@ CREATE TABLE "hr_screening"."applications" (
 	"linkedin_url" text,
 	"answers" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"resume_file_name" text,
+	"resume_url" text,
 	"resume_text" text,
 	"screening_status" "hr_screening"."screening_status" DEFAULT 'pending' NOT NULL,
 	"score" integer,

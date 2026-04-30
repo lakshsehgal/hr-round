@@ -11,6 +11,8 @@ uses Claude to score and rank candidates against each role's rubric.
 - **Drizzle ORM**, scoped to a dedicated Postgres schema (default
   `hr_screening`) so this app's tables can never collide with other projects
   sharing the same Neon database.
+- **Vercel Blob** for resume PDF storage (unguessable URLs, treated as
+  admin-only)
 - **Anthropic SDK** (`claude-sonnet-4-6`) with tool use + prompt caching
 - **pdf-parse** to extract text from uploaded resumes for the model
 
@@ -59,13 +61,14 @@ uses Claude to score and rank candidates against each role's rubric.
 Paste these into the Vercel project (Settings → Environment Variables) for
 Production + Preview + Development.
 
-| Key                    | Notes                                            |
-| ---------------------- | ------------------------------------------------ |
-| `DATABASE_URL`         | Neon pooled connection string                    |
-| `DB_SCHEMA`            | `hr_screening` (or any unique identifier)        |
-| `ANTHROPIC_API_KEY`    | `sk-ant-...`                                     |
-| `ADMIN_PASSWORD`       | Any long random string                           |
-| `ADMIN_SESSION_SECRET` | Any long random string (≥ 16 chars)              |
+| Key                    | Notes                                                                |
+| ---------------------- | -------------------------------------------------------------------- |
+| `DATABASE_URL`         | Neon pooled connection string                                        |
+| `DB_SCHEMA`            | `hr_screening` (or any unique identifier)                            |
+| `ANTHROPIC_API_KEY`    | `sk-ant-...`                                                         |
+| `ADMIN_PASSWORD`       | Any long random string                                               |
+| `ADMIN_SESSION_SECRET` | Any long random string (≥ 16 chars)                                  |
+| `BLOB_READ_WRITE_TOKEN`| Auto-injected when you connect a Vercel Blob store to the project    |
 
 ### 3. GitHub Actions secrets
 
@@ -123,10 +126,12 @@ scripts/seed.ts                 # Schema + demo job
 
 ## Known tradeoffs
 
-- **Resume binaries are not stored.** We extract text via `pdf-parse` for the
-  AI screen and store only the extracted text + filename. If you want
-  recruiters to download the original PDF, add Vercel Blob (one env var, ~5
-  minutes of work).
+- **Resume PDFs are stored in Vercel Blob with unguessable URLs**
+  (`addRandomSuffix: true`). The URLs are technically public if known, but
+  only surface in the admin dashboard which is password-gated. Sufficient
+  for HR use; if you need true private access with signed URLs, switch to
+  Blob's private access tier (Vercel Pro) or front the download with a
+  per-request signing route.
 - **Portfolio content isn't fetched.** The model only sees that a link was
   provided and weighs the specificity of the candidate's own description. To
   evaluate the reel itself, transcription + vision is a bigger lift.

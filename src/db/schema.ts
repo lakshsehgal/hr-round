@@ -51,6 +51,7 @@ export const applications = appSchema.table("applications", {
   linkedinUrl: text("linkedin_url"),
   answers: jsonb("answers").$type<Record<string, unknown>>().notNull().default({}),
   resumeFileName: text("resume_file_name"),
+  resumeUrl: text("resume_url"),
   resumeText: text("resume_text"),
   screeningStatus: screeningStatus("screening_status").notNull().default("pending"),
   score: integer("score"),

@@ -127,11 +127,20 @@ export default async function AdminJobApplicationsPage({
                       LinkedIn ↗
                     </a>
                   )}
-                  {app.resumeFileName && (
+                  {app.resumeUrl ? (
+                    <a
+                      href={app.resumeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-border px-3 py-1 font-medium text-secondary hover:text-fg"
+                    >
+                      Resume PDF ↓
+                    </a>
+                  ) : app.resumeFileName ? (
                     <span className="rounded-full border border-border px-3 py-1 font-medium text-secondary">
                       Resume: {app.resumeFileName}
                     </span>
-                  )}
+                  ) : null}
                   {answers.currentCtc && (
                     <span className="rounded-full border border-border px-3 py-1 text-secondary">
                       Current: {answers.currentCtc}

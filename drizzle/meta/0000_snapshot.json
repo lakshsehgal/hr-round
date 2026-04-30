@@ -1,5 +1,5 @@
 {
-  "id": "9afd7b69-30ee-442a-a87c-0b6429aecc49",
+  "id": "c264064e-5e05-455f-9609-f056e695ccff",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -54,6 +54,12 @@
         },
         "resume_file_name": {
           "name": "resume_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resume_url": {
+          "name": "resume_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
