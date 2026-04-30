@@ -8,8 +8,7 @@ rubric.
 
 - **Next.js 15** (App Router, server components, server actions)
 - **TypeScript** + **Tailwind CSS** (dark Neuroid theme, Syne + DM Sans)
-- **Neon Postgres** via `@neondatabase/serverless`
-- **Drizzle ORM** scoped to a dedicated Postgres schema (default `hr_screening`)
+- **Supabase Postgres** (via `postgres-js` + Drizzle, scoped to its own schema)
 - **Supabase Storage** for resume PDFs (signed URLs for admin download)
 - **Anthropic SDK** (`claude-sonnet-4-6`) with tool use + prompt caching
 - **pdf-parse** to extract text from uploaded resumes for the model
@@ -47,30 +46,34 @@ rubric.
 - The UI treats AI output as a **recommendation**, never a hard filter. Full
   raw responses are stored for audit.
 
-## Deployment (Vercel + Neon + Supabase)
+## Deployment (Vercel + Supabase)
 
 ### 1. Provision services
 
-- **Neon**: create a database (any region). Grab the pooled connection string.
-- **Supabase**: create a project. Grab the **project URL** and the **service
-  role key** (Project Settings → API). You do **not** need to create the
-  bucket — the seed script does that.
+- **Supabase**: create a project. From the dashboard you need three things:
+  - *Project Settings → Database → Connection string → **Session pooler*** —
+    this is your `DATABASE_URL` (port 5432).
+  - *Project Settings → API → Project URL* — this is `SUPABASE_URL`.
+  - *Project Settings → API → service_role key* — this is
+    `SUPABASE_SERVICE_ROLE_KEY` (server-side only, never expose).
+- You do **not** need to create the bucket or the schema — the seed script
+  does that on first run.
 
 ### 2. Add Vercel environment variables
 
 Paste these into the Vercel project (Settings → Environment Variables). All
 are "Production + Preview + Development" unless noted.
 
-| Key                         | Example / note                                  |
-| --------------------------- | ----------------------------------------------- |
-| `DATABASE_URL`              | `postgres://.../dbname?sslmode=require`         |
-| `DB_SCHEMA`                 | `hr_screening`                                  |
-| `ANTHROPIC_API_KEY`         | `sk-ant-...`                                    |
-| `ADMIN_PASSWORD`            | Any long random string                          |
-| `ADMIN_SESSION_SECRET`      | Any long random string (≥ 16 chars)             |
-| `SUPABASE_URL`              | `https://YOUR-PROJECT.supabase.co`              |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key — server-side only            |
-| `SUPABASE_BUCKET`           | `resumes` (default if unset)                    |
+| Key                         | Example / note                                                                                  |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`              | Supabase Postgres session-pooler URL: `postgres://postgres.PROJECT:PWD@aws-0-REGION.pooler.supabase.com:5432/postgres` |
+| `DB_SCHEMA`                 | `hr_screening`                                                                                  |
+| `ANTHROPIC_API_KEY`         | `sk-ant-...`                                                                                    |
+| `ADMIN_PASSWORD`            | Any long random string                                                                          |
+| `ADMIN_SESSION_SECRET`      | Any long random string (≥ 16 chars)                                                             |
+| `SUPABASE_URL`              | `https://YOUR-PROJECT.supabase.co`                                                              |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key — server-side only                                                             |
+| `SUPABASE_BUCKET`           | `resumes` (default if unset)                                                                    |
 
 ### 3. Add GitHub Actions secrets
 
@@ -85,10 +88,10 @@ Repository Settings → Secrets and variables → Actions. Needed by the
 
 ### 4. Push / deploy
 
-- On push, the GitHub Action applies the schema (`drizzle-kit push`) and runs
-  the seed (creates Supabase bucket + inserts the demo job). Safe to re-run:
-  schema push is idempotent, seed uses `onConflictDoNothing`, bucket create
-  is guarded.
+- On push, the GitHub Action applies the schema (`drizzle-kit push`) to
+  Supabase Postgres and runs the seed (creates the storage bucket + inserts
+  the demo job). Safe to re-run: schema push is idempotent, seed uses
+  `onConflictDoNothing`, bucket create is guarded.
 - Vercel builds and deploys the app. First visit to `/` should show the
   Neuroid Video Editor & Graphic Designer listing.
 
@@ -111,7 +114,7 @@ src/
     admin/                      # Gated dashboard
     jobs/[slug]/                # Public job + application form
   db/
-    client.ts                   # Drizzle client (Neon HTTP)
+    client.ts                   # Drizzle client (postgres-js + Supabase)
     schema.ts                   # pgSchema-scoped tables
   lib/
     admin-auth.ts               # HMAC-signed admin session cookie
