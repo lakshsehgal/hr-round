@@ -1,5 +1,5 @@
 {
-  "id": "eeffd9b8-d9b8-4d36-b19a-2cf434aac163",
+  "id": "9afd7b69-30ee-442a-a87c-0b6429aecc49",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -54,12 +54,6 @@
         },
         "resume_file_name": {
           "name": "resume_file_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resume_storage_path": {
-          "name": "resume_storage_path",
           "type": "text",
           "primaryKey": false,
           "notNull": false
